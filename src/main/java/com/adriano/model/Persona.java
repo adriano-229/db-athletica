@@ -8,34 +8,25 @@ import java.time.LocalDate;
 @Table(name = "persona", schema = "people")
 @Inheritance(strategy = InheritanceType.JOINED)
 public class Persona {
-
     @Id
-    private int documento;
-    @Column(name = "nombre_completo", nullable = false)
+    @Column(name = "documento")
+    private Integer documento;
+
+    @Column(name = "nombre_completo")
     private String nombreCompleto;
-    @Column(name = "fecha_nacimiento", nullable = false)
+
+    @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+
+    @Column(name = "sexo")
     private Sexo sexo;
 
-    public Persona(int doc, String nombre, LocalDate fecha, char sexo) {
-        this.documento = doc;
-        this.nombreCompleto = nombre;
-        this.fechaNacimiento = fecha;
-        this.sexo = Sexo.valueOf(String.valueOf(sexo));
-    }
-
-    public Persona() {
-
-    }
-
-    // Getters and Setters
-    public int getDocumento() {
+    // Getters and setters
+    public Integer getDocumento() {
         return documento;
     }
 
-    public void setDocumento(int documento) {
+    public void setDocumento(Integer documento) {
         this.documento = documento;
     }
 
