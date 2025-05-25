@@ -1,4 +1,3 @@
-// src/main/java/com/adriano/dao/ContratoDAO.java
 package com.adriano.dao;
 
 import com.adriano.model.Contrato;

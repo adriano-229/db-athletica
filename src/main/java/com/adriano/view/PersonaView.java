@@ -15,7 +15,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Function;
 
 public class PersonaView extends JFrame {
 
@@ -23,15 +22,18 @@ public class PersonaView extends JFrame {
     private final JTextField documentoField = new JTextField(10);
     private final JTextField nombreField = new JTextField(20);
     private final JTextField nacimientoField = new JTextField(10);
+    private final JTextField telefonoField = new JTextField(10);
     private final JComboBox<String> sexoBox = new JComboBox<>(new String[]{"M", "F", "X"});
     private final JComboBox<String> tipoBox = new JComboBox<>(new String[]{"Alumno", "Profesor", "Encargado"});
+
     // Specific fields
     private final JTextField certificadoField = new JTextField(10);
-    private final JTextField especialidadField = new JTextField(15);
-    private final JTextField telefonoField = new JTextField(10);
+    private final JTextField fechaIncorporacion = new JTextField(10);
+    private final JTextField porcentajeField = new JTextField(5);
+
     private final JPanel alumnoPanel = createLabeledField("Vence Certificado (YYYY-MM-DD):", certificadoField);
-    private final JPanel profesorPanel = createLabeledField("Especialidad:", especialidadField);
-    private final JPanel encargadoPanel = createLabeledField("Teléfono:", telefonoField);
+    private final JPanel profesorPanel = createLabeledField("Incorporación (YYYY-MM-DD):", fechaIncorporacion);
+    private final JPanel encargadoPanel = createLabeledField("Porcentaje Accionario:", porcentajeField);
     private final JButton expiredButton = new JButton("Mostrar Certificados Vencidos");
     private final JTable table = new JTable();
     private final AlumnoController alumnoController = new AlumnoController();
@@ -54,9 +56,9 @@ public class PersonaView extends JFrame {
 
         // Button Panel
         JPanel buttonPanel = new JPanel();
-        JButton addButton = new JButton("Add");
-        JButton listButton = new JButton("List All");
-        JButton deleteButton = new JButton("Delete Selected");
+        JButton addButton = new JButton("Agregar");
+        JButton listButton = new JButton("Listar todos");
+        JButton deleteButton = new JButton("Borrar seleccionado");
         buttonPanel.add(addButton);
         buttonPanel.add(listButton);
         buttonPanel.add(deleteButton);
@@ -98,6 +100,8 @@ public class PersonaView extends JFrame {
         panel.add(nacimientoField);
         panel.add(new JLabel("Sexo:"));
         panel.add(sexoBox);
+        panel.add(new JLabel("Teléfono:"));
+        panel.add(telefonoField);
         return panel;
     }
 
@@ -129,11 +133,12 @@ public class PersonaView extends JFrame {
         repaint();
     }
 
-    private void setCommonPersonaFields(Persona persona, int doc, String nombre, LocalDate fechaNacimiento, Persona.Sexo sexo) {
+    private void setCommonPersonaFields(Persona persona, int doc, String nombre, LocalDate fechaNacimiento, Persona.Sexo sexo, String telefono) {
         persona.setDocumento(doc);
         persona.setNombreCompleto(nombre);
         persona.setFechaNacimiento(fechaNacimiento);
         persona.setSexo(sexo);
+        persona.setTelefono(telefono);
     }
 
     private void saveEntity() {
@@ -143,28 +148,25 @@ public class PersonaView extends JFrame {
             LocalDate fechaNacimiento = LocalDate.parse(nacimientoField.getText());
             Persona.Sexo sexo = Persona.Sexo.valueOf(sexoBox.getSelectedItem().toString());
             TipoPersona tipo = TipoPersona.fromString((String) tipoBox.getSelectedItem());
+            String telefono = telefonoField.getText();
 
             switch (tipo) {
                 case ALUMNO:
-                    LocalDate fechaCertificado = LocalDate.parse(certificadoField.getText());
-                    Date certificadoDate = Date.from(fechaCertificado.atStartOfDay(ZoneId.systemDefault()).toInstant());
                     Alumno alumno = new Alumno();
-                    setCommonPersonaFields(alumno, doc, nombre, fechaNacimiento, sexo);
-                    alumno.setFechaVenceCertificado(certificadoDate);
+                    setCommonPersonaFields(alumno, doc, nombre, fechaNacimiento, sexo, telefono);
+                    alumno.setFechaVenceCertificado(Date.from(LocalDate.parse(certificadoField.getText()).atStartOfDay(ZoneId.systemDefault()).toInstant()));
                     alumnoController.save(alumno);
                     break;
                 case PROFESOR:
-                    String especialidad = especialidadField.getText();
                     Profesor profesor = new Profesor();
-                    setCommonPersonaFields(profesor, doc, nombre, fechaNacimiento, sexo);
-                    profesor.setEspecialidad(especialidad);
+                    setCommonPersonaFields(profesor, doc, nombre, fechaNacimiento, sexo, telefono);
+                    profesor.setFechaIncorporacion(Date.from(LocalDate.parse(fechaIncorporacion.getText()).atStartOfDay(ZoneId.systemDefault()).toInstant()));
                     profesorController.save(profesor);
                     break;
                 case ENCARGADO:
-                    String telefono = telefonoField.getText();
                     Encargado encargado = new Encargado();
-                    setCommonPersonaFields(encargado, doc, nombre, fechaNacimiento, sexo);
-                    encargado.setTelefono(telefono);
+                    setCommonPersonaFields(encargado, doc, nombre, fechaNacimiento, sexo, telefono);
+                    encargado.setPorcentajeAccionario(Double.parseDouble(porcentajeField.getText()));
                     encargadoController.save(encargado);
                     break;
             }
@@ -182,40 +184,74 @@ public class PersonaView extends JFrame {
         documentoField.setText("");
         nombreField.setText("");
         nacimientoField.setText("");
-        certificadoField.setText("");
-        especialidadField.setText("");
         telefonoField.setText("");
+        sexoBox.setSelectedIndex(0);
+        certificadoField.setText("");
+        fechaIncorporacion.setText("");
+        porcentajeField.setText("");
     }
 
     private void listEntities() {
         TipoPersona tipo = TipoPersona.fromString((String) tipoBox.getSelectedItem());
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Documento");
+        model.addColumn("Nombre");
+        model.addColumn("Nacimiento");
+        model.addColumn("Sexo");
+        model.addColumn("Teléfono");
+
         try {
+            List<? extends Persona> personas;
             switch (tipo) {
                 case ALUMNO:
-                    List<Alumno> alumnos = alumnoController.getAll();
-                    displayEntities(alumnos, "Vence Certificado", Alumno::getFechaVenceCertificado);
+                    personas = alumnoController.getAll();
+                    model.addColumn("Vence Certificado");
+                    for (Alumno alumno : (List<Alumno>) personas) {
+                        model.addRow(new Object[]{
+                                alumno.getDocumento(),
+                                alumno.getNombreCompleto(),
+                                alumno.getFechaNacimiento(),
+                                alumno.getSexo(),
+                                alumno.getTelefono(),
+                                alumno.getFechaVenceCertificado()
+                        });
+                    }
                     break;
                 case PROFESOR:
-                    List<Profesor> profesores = profesorController.getAll();
-                    displayEntities(profesores, "Especialidad", Profesor::getEspecialidad);
+                    personas = profesorController.getAll();
+                    model.addColumn("Fecha Incorporación");
+                    for (Profesor profesor : (List<Profesor>) personas) {
+                        model.addRow(new Object[]{
+                                profesor.getDocumento(),
+                                profesor.getNombreCompleto(),
+                                profesor.getFechaNacimiento(),
+                                profesor.getSexo(),
+                                profesor.getTelefono(),
+                                profesor.getFechaIncorporacion()
+                        });
+                    }
                     break;
                 case ENCARGADO:
-                    List<Encargado> encargados = encargadoController.getAll();
-                    displayEntities(encargados, "Teléfono", Encargado::getTelefono);
+                    personas = encargadoController.getAll();
+                    model.addColumn("Porcentaje Accionario");
+                    for (Encargado encargado : (List<Encargado>) personas) {
+                        model.addRow(new Object[]{
+                                encargado.getDocumento(),
+                                encargado.getNombreCompleto(),
+                                encargado.getFechaNacimiento(),
+                                encargado.getSexo(),
+                                encargado.getTelefono(),
+                                encargado.getPorcentajeAccionario()
+                        });
+                    }
                     break;
             }
+            table.setModel(model);
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error loading " + tipo + "s: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error al listar: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
 
-    private <T extends Persona> void displayEntities(List<T> entities, String extraColumn, Function<T, Object> extraValueProvider) {
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Documento", "Nombre", "Nacimiento", "Sexo", extraColumn}, 0);
-        for (T entity : entities) {
-            model.addRow(new Object[]{entity.getDocumento(), entity.getNombreCompleto(), entity.getFechaNacimiento(), entity.getSexo(), extraValueProvider.apply(entity)});
-        }
-        table.setModel(model);
     }
 
     private void deleteSelected() {
@@ -246,13 +282,33 @@ public class PersonaView extends JFrame {
         }
     }
 
+
     private void showExpiredCertificates() {
+        // displays the exact same alumnos table but only those with expired certificates
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Documento");
+        model.addColumn("Nombre");
+        model.addColumn("Nacimiento");
+        model.addColumn("Sexo");
+        model.addColumn("Teléfono");
+        model.addColumn("Vence Certificado");
+
         try {
-            List<Alumno> vencidos = alumnoController.findExpiredCertificates(new Date());
-            displayEntities(vencidos, "Vence Certificado", Alumno::getFechaVenceCertificado);
+            List<Alumno> alumnos = alumnoController.findExpiredCertificates(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+            for (Alumno alumno : alumnos) {
+                model.addRow(new Object[]{
+                        alumno.getDocumento(),
+                        alumno.getNombreCompleto(),
+                        alumno.getFechaNacimiento(),
+                        alumno.getSexo(),
+                        alumno.getTelefono(),
+                        alumno.getFechaVenceCertificado()
+                });
+            }
+            table.setModel(model);
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error al obtener certificados vencidos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error al listar: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

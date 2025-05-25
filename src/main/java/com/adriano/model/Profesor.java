@@ -5,19 +5,21 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 
+import java.util.Date;
+
 @Entity
 @Table(name = "profesor", schema = "people")
 @PrimaryKeyJoinColumn(name = "documento")
 public class Profesor extends Persona {
 
-    @Column(name = "especialidad", nullable = false)
-    private String especialidad;
+    @Column(name = "fecha_incorporacion", nullable = false)
+    private Date fechaIncorporacion;
 
-    public String getEspecialidad() {
-        return especialidad;
+    public Date getFechaIncorporacion() {
+        return fechaIncorporacion;
     }
 
-    public void setEspecialidad(String especialidad) {
-        this.especialidad = especialidad;
+    public void setFechaIncorporacion(Date fechaIncorporacion) {
+        this.fechaIncorporacion = fechaIncorporacion;
     }
 }

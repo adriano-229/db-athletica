@@ -1,4 +1,3 @@
-// src/main/java/com/adriano/dao/AsistenciaDAO.java
 package com.adriano.dao;
 
 import com.adriano.model.Asistencia;

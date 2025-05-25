@@ -7,7 +7,7 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class BaseDAO<T, ID> {
+public abstract class BaseDAO<T, ID> {
     private final Class<T> entityClass;
 
     public BaseDAO(Class<T> entityClass) {

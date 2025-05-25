@@ -21,6 +21,9 @@ abstract public class Persona {
     @Column(name = "sexo")
     private Sexo sexo;
 
+    @Column(name = "telefono")
+    private String telefono;
+
     // Getters and setters
     public Integer getDocumento() {
         return documento;
@@ -52,6 +55,14 @@ abstract public class Persona {
 
     public void setSexo(Sexo sexo) {
         this.sexo = sexo;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
     }
 
     public enum Sexo {M, F, X}

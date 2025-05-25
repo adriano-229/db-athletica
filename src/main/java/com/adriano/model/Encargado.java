@@ -10,14 +10,15 @@ import jakarta.persistence.Table;
 @PrimaryKeyJoinColumn(name = "documento")
 public class Encargado extends Persona {
 
-    @Column(name = "telefono", nullable = false)
-    private String telefono;
 
-    public String getTelefono() {
-        return telefono;
+    @Column(name = "porcentaje_accionario", nullable = false)
+    private Double porcentajeAccionario;
+
+    public Double getPorcentajeAccionario() {
+        return porcentajeAccionario;
     }
 
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
+    public void setPorcentajeAccionario(Double porcentajeAccionario) {
+        this.porcentajeAccionario = porcentajeAccionario;
     }
 }
