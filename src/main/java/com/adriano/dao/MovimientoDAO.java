@@ -1,4 +1,3 @@
-// src/main/java/com/adriano/dao/MovimientoDAO.java
 package com.adriano.dao;
 
 import com.adriano.model.Movimiento;

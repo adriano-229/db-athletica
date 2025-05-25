@@ -1,4 +1,3 @@
-// src/main/java/com/adriano/dao/IngresoDAO.java
 package com.adriano.dao;
 
 import com.adriano.model.Ingreso;

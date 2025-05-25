@@ -2,7 +2,7 @@ package com.adriano.controller;
 
 import java.util.List;
 
-public class BaseController<T, ID> {
+public abstract class BaseController<T, ID> {
     protected final com.adriano.dao.BaseDAO<T, ID> dao;
 
     public BaseController(com.adriano.dao.BaseDAO<T, ID> dao) {
