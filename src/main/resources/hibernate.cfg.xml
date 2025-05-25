@@ -22,8 +22,9 @@
         <property name="hibernate.hbm2ddl.auto">create</property>
 
         <!-- Register annotated classes manually -->
-        <mapping class="com.adriano.model.Persona"/>
+        <mapping class="com.adriano.model.Alumno"/>
         <mapping class="com.adriano.model.Profesor"/>
+        <mapping class="com.adriano.model.Encargado"/>
 
     </session-factory>
 </hibernate-configuration>
