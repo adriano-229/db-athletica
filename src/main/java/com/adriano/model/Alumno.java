@@ -11,6 +11,7 @@ import java.util.Date;
 @Table(name = "alumno", schema = "people")
 @PrimaryKeyJoinColumn(name = "documento")
 public class Alumno extends Persona {
+
     @Column(name = "fecha_vence_certificado", nullable = false)
     private Date fechaVenceCertificado;
 

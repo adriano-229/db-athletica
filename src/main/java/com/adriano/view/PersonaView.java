@@ -2,7 +2,6 @@ package com.adriano.view;
 
 import com.adriano.controller.AlumnoController;
 import com.adriano.controller.EncargadoController;
-import com.adriano.controller.PersonaController;
 import com.adriano.controller.ProfesorController;
 import com.adriano.model.Alumno;
 import com.adriano.model.Encargado;
@@ -14,6 +13,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -36,16 +36,11 @@ public class PersonaView extends JFrame {
     private final JPanel encargadoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
     private final JTextField telefonoField = new JTextField(10);
 
-    // Buttons
-    private final JButton addButton = new JButton("Add");
-    private final JButton listButton = new JButton("List All");
-    private final JButton deleteButton = new JButton("Delete Selected");
     private final JButton expiredButton = new JButton("Show Expired Certificates");
 
     private final JTable table = new JTable();
 
     // Controllers
-    private final PersonaController personaController = new PersonaController();
     private final AlumnoController alumnoController = new AlumnoController();
     private final ProfesorController profesorController = new ProfesorController();
     private final EncargadoController encargadoController = new EncargadoController();
@@ -53,7 +48,7 @@ public class PersonaView extends JFrame {
     public PersonaView() {
         super("Personas Management");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600);
+        setSize(1200, 800);
         setLayout(new BorderLayout());
 
         // Main form panel
@@ -95,8 +90,11 @@ public class PersonaView extends JFrame {
 
         // Button panel
         JPanel buttonPanel = new JPanel();
+        JButton addButton = new JButton("Add");
         buttonPanel.add(addButton);
+        JButton listButton = new JButton("List All");
         buttonPanel.add(listButton);
+        JButton deleteButton = new JButton("Delete Selected");
         buttonPanel.add(deleteButton);
         buttonPanel.add(expiredButton);
         expiredButton.setVisible(false);
@@ -119,16 +117,60 @@ public class PersonaView extends JFrame {
         setVisible(true);
     }
 
+
+
+    private void displayAlumnos(List<Alumno> alumnos) {
+        DefaultTableModel model = new DefaultTableModel(
+                new Object[]{"Documento", "Nombre", "Nacimiento", "Sexo", "Vence Certificado"}, 0);
+        for (Alumno a : alumnos) {
+            model.addRow(new Object[]{
+                    a.getDocumento(),
+                    a.getNombreCompleto(),
+                    a.getFechaNacimiento(),
+                    a.getSexo(),
+                    a.getFechaVenceCertificado()
+            });
+        }
+        table.setModel(model);
+    }
+
+    private void displayProfesores(List<Profesor> profesores) {
+        DefaultTableModel model = new DefaultTableModel(
+                new Object[]{"Documento", "Nombre", "Nacimiento", "Sexo", "Especialidad"}, 0);
+        for (Profesor p : profesores) {
+            model.addRow(new Object[]{
+                    p.getDocumento(),
+                    p.getNombreCompleto(),
+                    p.getFechaNacimiento(),
+                    p.getSexo(),
+                    p.getEspecialidad()
+            });
+        }
+        table.setModel(model);
+    }
+
+    private void displayEncargados(List<Encargado> encargados) {
+        DefaultTableModel model = new DefaultTableModel(
+                new Object[]{"Documento", "Nombre", "Nacimiento", "Sexo", "Teléfono"}, 0);
+        for (Encargado e : encargados) {
+            model.addRow(new Object[]{
+                    e.getDocumento(),
+                    e.getNombreCompleto(),
+                    e.getFechaNacimiento(),
+                    e.getSexo(),
+                    e.getTelefono()
+            });
+        }
+        table.setModel(model);
+    }
+
     private void updateFormFields() {
         String selectedType = (String) tipoBox.getSelectedItem();
-
-        // Hide all specific panels first
         alumnoPanel.setVisible(false);
         profesorPanel.setVisible(false);
         encargadoPanel.setVisible(false);
         expiredButton.setVisible(false);
 
-        // Show the relevant panel based on selection
         switch (selectedType) {
             case "Alumno":
                 alumnoPanel.setVisible(true);
@@ -141,8 +183,6 @@ public class PersonaView extends JFrame {
                 encargadoPanel.setVisible(true);
                 break;
         }
-
-        // Repaint the form
         revalidate();
         repaint();
     }
@@ -161,7 +201,6 @@ public class PersonaView extends JFrame {
                 case "Alumno":
                     LocalDate fechaCertificado = LocalDate.parse(certificadoField.getText());
                     Date certificadoDate = Date.from(fechaCertificado.atStartOfDay(ZoneId.systemDefault()).toInstant());
-
                     Alumno alumno = new Alumno();
                     alumno.setDocumento(doc);
                     alumno.setNombreCompleto(nombre);
@@ -170,10 +209,8 @@ public class PersonaView extends JFrame {
                     alumno.setFechaVenceCertificado(certificadoDate);
                     alumnoController.save(alumno);
                     break;
-
                 case "Profesor":
                     String especialidad = especialidadField.getText();
-
                     Profesor profesor = new Profesor();
                     profesor.setDocumento(doc);
                     profesor.setNombreCompleto(nombre);
@@ -182,10 +219,8 @@ public class PersonaView extends JFrame {
                     profesor.setEspecialidad(especialidad);
                     profesorController.save(profesor);
                     break;
-
                 case "Encargado":
                     String telefono = telefonoField.getText();
-
                     Encargado encargado = new Encargado();
                     encargado.setDocumento(doc);
                     encargado.setNombreCompleto(nombre);
@@ -195,7 +230,6 @@ public class PersonaView extends JFrame {
                     encargadoController.save(encargado);
                     break;
             }
-
             JOptionPane.showMessageDialog(this, selectedType + " guardado correctamente.");
             clearForm();
             listEntities();
@@ -216,86 +250,27 @@ public class PersonaView extends JFrame {
 
     private void listEntities() {
         String selectedType = (String) tipoBox.getSelectedItem();
-
-        switch (selectedType) {
-            case "Persona":
-                displayPersonas(personaController.getAll());
-                break;
-            case "Alumno":
-                displayAlumnos(alumnoController.getAll());
-                break;
-            case "Profesor":
-                List<Profesor> profesores = profesorController.getAll();
-                displayProfesores(profesores);
-                break;
-            case "Encargado":
-                List<Encargado> encargados = encargadoController.getAll();
-                displayEncargados(encargados);
-                break;
+        try {
+            switch (selectedType) {
+                case "Alumno":
+                    List<Alumno> alumnos = alumnoController.getAll();
+                    displayAlumnos(alumnos != null ? alumnos : new ArrayList<>());
+                    break;
+                case "Profesor":
+                    List<Profesor> profesores = profesorController.getAll();
+                    displayProfesores(profesores != null ? profesores : new ArrayList<>());
+                    break;
+                case "Encargado":
+                    List<Encargado> encargados = encargadoController.getAll();
+                    displayEncargados(encargados != null ? encargados : new ArrayList<>());
+                    break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error loading " + selectedType + "s: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    private void displayPersonas(List<Persona> personas) {
-        DefaultTableModel model = new DefaultTableModel(
-                new Object[]{"Documento", "Nombre", "Nacimiento", "Sexo"}, 0);
-
-        for (Persona p : personas) {
-            model.addRow(new Object[]{
-                    p.getDocumento(),
-                    p.getNombreCompleto(),
-                    p.getFechaNacimiento(),
-                    p.getSexo()
-            });
-        }
-        table.setModel(model);
-    }
-
-    private void displayAlumnos(List<Alumno> alumnos) {
-        DefaultTableModel model = new DefaultTableModel(
-                new Object[]{"Documento", "Nombre", "Nacimiento", "Sexo", "Vence Certificado"}, 0);
-
-        for (Alumno a : alumnos) {
-            model.addRow(new Object[]{
-                    a.getDocumento(),
-                    a.getNombreCompleto(),
-                    a.getFechaNacimiento(),
-                    a.getSexo(),
-                    a.getFechaVenceCertificado()
-            });
-        }
-        table.setModel(model);
-    }
-
-    private void displayProfesores(List<Profesor> profesores) {
-        DefaultTableModel model = new DefaultTableModel(
-                new Object[]{"Documento", "Nombre", "Nacimiento", "Sexo", "Especialidad"}, 0);
-
-        for (Profesor p : profesores) {
-            model.addRow(new Object[]{
-                    p.getDocumento(),
-                    p.getNombreCompleto(),
-                    p.getFechaNacimiento(),
-                    p.getSexo(),
-                    p.getEspecialidad()
-            });
-        }
-        table.setModel(model);
-    }
-
-    private void displayEncargados(List<Encargado> encargados) {
-        DefaultTableModel model = new DefaultTableModel(
-                new Object[]{"Documento", "Nombre", "Nacimiento", "Sexo", "Teléfono"}, 0);
-
-        for (Encargado e : encargados) {
-            model.addRow(new Object[]{
-                    e.getDocumento(),
-                    e.getNombreCompleto(),
-                    e.getFechaNacimiento(),
-                    e.getSexo(),
-                    e.getTelefono()
-            });
-        }
-        table.setModel(model);
     }
 
     private void deleteSelected() {
@@ -303,12 +278,8 @@ public class PersonaView extends JFrame {
         if (row != -1) {
             int doc = (int) table.getValueAt(row, 0);
             String selectedType = (String) tipoBox.getSelectedItem();
-
             try {
                 switch (selectedType) {
-                    case "Persona":
-                        personaController.delete(personaController.get(doc));
-                        break;
                     case "Alumno":
                         alumnoController.delete(alumnoController.get(doc));
                         break;
@@ -333,21 +304,20 @@ public class PersonaView extends JFrame {
         try {
             Date currentDate = new Date();
             List<Alumno> expiredAlumnos = alumnoController.findExpiredCertificates(currentDate);
-
             DefaultTableModel model = new DefaultTableModel(
                     new Object[]{"Documento", "Nombre", "Nacimiento", "Sexo", "Vence Certificado"}, 0);
-
             for (Alumno a : expiredAlumnos) {
-                model.addRow(new Object[]{
-                        a.getDocumento(),
-                        a.getNombreCompleto(),
-                        a.getFechaNacimiento(),
-                        a.getSexo(),
-                        a.getFechaVenceCertificado()
-                });
+                if (a.getFechaVenceCertificado().before(currentDate)) {
+                    model.addRow(new Object[]{
+                            a.getDocumento(),
+                            a.getNombreCompleto(),
+                            a.getFechaNacimiento(),
+                            a.getSexo(),
+                            a.getFechaVenceCertificado()
+                    });
+                }
             }
             table.setModel(model);
-
             if (expiredAlumnos.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "No hay certificados vencidos.");
             }

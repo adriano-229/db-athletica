@@ -7,7 +7,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "persona", schema = "people")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class Persona {
+abstract public class Persona {
     @Id
     @Column(name = "documento")
     private Integer documento;
@@ -54,5 +54,5 @@ public class Persona {
         this.sexo = sexo;
     }
 
-    public enum Sexo {M, F}
+    public enum Sexo {M, F, X}
 }
