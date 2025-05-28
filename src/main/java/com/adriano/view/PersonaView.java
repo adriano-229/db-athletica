@@ -35,6 +35,8 @@ public class PersonaView extends JFrame {
     private final JPanel profesorPanel = createLabeledField("Incorporación (YYYY-MM-DD):", fechaIncorporacion);
     private final JPanel encargadoPanel = createLabeledField("Porcentaje Accionario:", porcentajeField);
     private final JButton expiredButton = new JButton("Mostrar Certificados Vencidos");
+    private final JButton findButton = new JButton("Buscar por Documento");
+    private final JButton updateButton = new JButton("Actualizar seleccionado");
     private final JTable table = new JTable();
     private final AlumnoController alumnoController = new AlumnoController();
     private final ProfesorController profesorController = new ProfesorController();
@@ -63,6 +65,8 @@ public class PersonaView extends JFrame {
         buttonPanel.add(listButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(expiredButton);
+        buttonPanel.add(findButton);
+        buttonPanel.add(updateButton);
         expiredButton.setVisible(false);
 
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -78,10 +82,141 @@ public class PersonaView extends JFrame {
         listButton.addActionListener(e -> listEntities());
         deleteButton.addActionListener(e -> deleteSelected());
         expiredButton.addActionListener(e -> showExpiredCertificates());
+        findButton.addActionListener(e -> findByDocumento());
+        updateButton.addActionListener(e -> updateSelected());
 
         updateFormFields();
         setVisible(true);
     }
+
+    private void findByDocumento() {
+        try {
+            int doc = Integer.parseInt(documentoField.getText());
+            TipoPersona tipo = TipoPersona.fromString((String) tipoBox.getSelectedItem());
+            Persona persona = null;
+            switch (tipo) {
+                case ALUMNO:
+                    persona = alumnoController.get(doc);
+                    break;
+                case PROFESOR:
+                    persona = profesorController.get(doc);
+                    break;
+                case ENCARGADO:
+                    persona = encargadoController.get(doc);
+                    break;
+            }
+            if (persona == null) {
+                JOptionPane.showMessageDialog(this, tipo + " no encontrado.");
+                return;
+            }
+            // Fill form fields
+            documentoField.setText(String.valueOf(persona.getDocumento()));
+            nombreField.setText(persona.getNombreCompleto());
+            nacimientoField.setText(persona.getFechaNacimiento().toString());
+            sexoBox.setSelectedItem(persona.getSexo().toString());
+            telefonoField.setText(persona.getTelefono());
+            if (persona instanceof Alumno) {
+                certificadoField.setText(((Alumno) persona).getFechaVenceCertificado().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString());
+            } else if (persona instanceof Profesor) {
+                fechaIncorporacion.setText(((Profesor) persona).getFechaIncorporacion().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString());
+            } else if (persona instanceof Encargado) {
+                porcentajeField.setText(String.valueOf(((Encargado) persona).getPorcentajeAccionario()));
+            }
+
+            // Show only the found entity in the table
+            DefaultTableModel model = new DefaultTableModel();
+            model.addColumn("Documento");
+            model.addColumn("Nombre");
+            model.addColumn("Nacimiento");
+            model.addColumn("Sexo");
+            model.addColumn("Teléfono");
+            switch (tipo) {
+                case ALUMNO:
+                    model.addColumn("Vence Certificado");
+                    Alumno alumno = (Alumno) persona;
+                    model.addRow(new Object[]{
+                            alumno.getDocumento(),
+                            alumno.getNombreCompleto(),
+                            alumno.getFechaNacimiento(),
+                            alumno.getSexo(),
+                            alumno.getTelefono(),
+                            alumno.getFechaVenceCertificado()
+                    });
+                    break;
+                case PROFESOR:
+                    model.addColumn("Fecha Incorporación");
+                    Profesor profesor = (Profesor) persona;
+                    model.addRow(new Object[]{
+                            profesor.getDocumento(),
+                            profesor.getNombreCompleto(),
+                            profesor.getFechaNacimiento(),
+                            profesor.getSexo(),
+                            profesor.getTelefono(),
+                            profesor.getFechaIncorporacion()
+                    });
+                    break;
+                case ENCARGADO:
+                    model.addColumn("Porcentaje Accionario");
+                    Encargado encargado = (Encargado) persona;
+                    model.addRow(new Object[]{
+                            encargado.getDocumento(),
+                            encargado.getNombreCompleto(),
+                            encargado.getFechaNacimiento(),
+                            encargado.getSexo(),
+                            encargado.getTelefono(),
+                            encargado.getPorcentajeAccionario()
+                    });
+                    break;
+            }
+            table.setModel(model);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al buscar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void updateSelected() {
+        int row = table.getSelectedRow();
+        if (row != -1) {
+            try {
+                int doc = (int) table.getValueAt(row, 0);
+                TipoPersona tipo = TipoPersona.fromString((String) tipoBox.getSelectedItem());
+                Persona persona = switch (tipo) {
+                    case ALUMNO -> alumnoController.get(doc);
+                    case PROFESOR -> profesorController.get(doc);
+                    case ENCARGADO -> encargadoController.get(doc);
+                };
+                if (persona == null) {
+                    JOptionPane.showMessageDialog(this, tipo + " no encontrado.");
+                    return;
+                }
+                // Update fields from form
+                persona.setNombreCompleto(nombreField.getText());
+                persona.setFechaNacimiento(LocalDate.parse(nacimientoField.getText()));
+                persona.setSexo(Persona.Sexo.valueOf(sexoBox.getSelectedItem().toString()));
+                persona.setTelefono(telefonoField.getText());
+                if (persona instanceof Alumno) {
+                    ((Alumno) persona).setFechaVenceCertificado(Date.from(LocalDate.parse(certificadoField.getText()).atStartOfDay(ZoneId.systemDefault()).toInstant()));
+                    alumnoController.update((Alumno) persona);
+                } else if (persona instanceof Profesor) {
+                    ((Profesor) persona).setFechaIncorporacion(Date.from(LocalDate.parse(fechaIncorporacion.getText()).atStartOfDay(ZoneId.systemDefault()).toInstant()));
+                    profesorController.update((Profesor) persona);
+                } else if (persona instanceof Encargado) {
+                    ((Encargado) persona).setPorcentajeAccionario(Double.parseDouble(porcentajeField.getText()));
+                    encargadoController.update((Encargado) persona);
+                }
+                JOptionPane.showMessageDialog(this, tipo + " actualizado correctamente.");
+                listEntities();
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al actualizar: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Seleccione una fila para actualizar.");
+        }
+    }
+
 
     private JPanel createTypePanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -179,6 +314,7 @@ public class PersonaView extends JFrame {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 
     private void clearForm() {
         documentoField.setText("");
